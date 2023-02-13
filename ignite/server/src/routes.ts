@@ -17,7 +17,7 @@ export async function appRoutes(app: FastifyInstance) {
     await prisma.habit.create({
       data: {
         title,
-        creat_at: today,
+        created_at: today,
         weekDays: {
           create: weekDays.map((weekDay) => {
             return { week_day: weekDay };
@@ -39,7 +39,7 @@ export async function appRoutes(app: FastifyInstance) {
 
     const possibleHabits = await prisma.habit.findMany({
       where: {
-        creat_at: {
+        created_at: {
           lte: date,
         },
         weekDays: {
@@ -67,5 +67,80 @@ export async function appRoutes(app: FastifyInstance) {
       possibleHabits,
       completedHabits,
     };
+  });
+
+  app.patch("/habits/:id/toggle", async (request) => {
+    const toggleHabitParsm = z.object({
+      id: z.string().uuid(),
+    });
+
+    const { id } = toggleHabitParsm.parse(request.params);
+
+    const today = dayjs().startOf("day").toDate();
+
+    let day = await prisma.day.findUnique({
+      where: {
+        date: today,
+      },
+    });
+
+    if (!day) {
+      day = await prisma.day.create({
+        data: {
+          date: today,
+        },
+      });
+    }
+
+    const dayHabit = await prisma.dayHabit.findUnique({
+      where: {
+        day_id_habit_id: {
+          day_id: day.id,
+          habit_id: id,
+        },
+      },
+    });
+
+    if (dayHabit) {
+      await prisma.dayHabit.delete({
+        where: {
+          id: dayHabit.id,
+        },
+      });
+    } else {
+      await prisma.dayHabit.create({
+        data: {
+          day_id: day.id,
+          habit_id: id,
+        },
+      });
+    }
+  });
+
+  app.get("/summary", async () => {
+    const summary = await prisma.$queryRaw`
+      SELECT
+        D.id,
+        D.date,
+        (
+          SELECT
+            cast(count(*) as float)
+          FROM days_habits DH
+          WHERE DH.day_id = D.id
+        ) as completed,
+        (
+          SELECT 
+            cast(count(*) as float)
+          FROM habit_week_days as HWD
+          JOIN habits H
+            ON H.id = HWD.habit_id
+          WHERE
+            HWD.week_day = cast(strftime('%w', D.date/1000.0, 'unixepoch') as int)
+            AND H.created_at <= D.date
+        ) as amount
+      FROM days D
+    `;
+
+    return summary;
   });
 }

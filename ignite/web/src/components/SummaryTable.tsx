@@ -23,11 +23,11 @@ const SummaryTable = () => {
 
       <div className="grid grid-rows-7 grid-flow-col gap-3">
         {summaryDates.map(date => {
-          return (<HabitDay key={date.toString()} />)
+          return (<HabitDay amount={5} completed={Math.random() * 5} key={date.toString()} />)
         })}
 
         {amoutOfDaysToFill > 0 && Array.from({ length: amoutOfDaysToFill }).map((_, i) => {
-          return (<HabitDay disabled={true} key={i} />)
+          return (<HabitDay amount={0} completed={0} disabled={true} key={i} />)
         })}
       </div>
     </div>
