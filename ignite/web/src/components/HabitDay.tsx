@@ -1,22 +1,31 @@
+import * as Checkbox from '@radix-ui/react-checkbox';
 import * as Popover from '@radix-ui/react-popover'
 import clsx from 'clsx';
+import dayjs from 'dayjs';
+import { Check } from 'phosphor-react';
+import AppCheckBox from './AppCheckBox';
 import ProgressBar from './ProgressBar';
 
 interface IHabiyDay {
-  disabled?: boolean
+  disabled?: boolean,
   amount: number,
   completed: number,
+  date?: Date,
 }
 
-function HabitDay(props: IHabiyDay) {
+function HabitDay({ ...props }) {
+  const { completed = 0, amount = 0, disabled, date, checked } = props;
 
-  const completedPercentage = Math.round((props.completed / props.amount) * 100);
+  const completedPercentage = Math.round((completed / amount) * 100);
+
+  const dayAndMonth = dayjs(date).format('DD/MM');
+  const dayOfWeek = dayjs(date).format('dddd');
 
   return (
     <Popover.Root>
       <Popover.Trigger className={clsx(`
           w-10 h-10 bg-zinc-900 border-2 border-zinc-800 rounded-lg 
-          ${props.disabled ? 'opacity-40 cursor-not-allowed' : ''}
+          ${disabled ? 'opacity-40 cursor-not-allowed' : ''}
         `,
         {
           'bg-zinc-900 border-zinc-800': completedPercentage === 0,
@@ -29,13 +38,20 @@ function HabitDay(props: IHabiyDay) {
       )}
       />
 
-      {!props.disabled ? (
+      {!disabled ? (
         <Popover.Portal>
           <Popover.Content className="min-w-[320px] p-6 rounded-2xl bg-zinc-900 flex flex-col">
-            <span className='font-semibold text-zinc-400'>terça-feira</span>
-            <span className='mt-1 font-extrabold leading-tight text-3xl'>17/01</span>
+            <span className='font-semibold text-zinc-400'>{dayOfWeek}</span>
+            <span className='mt-1 font-extrabold leading-tight text-3xl'>{dayAndMonth}</span>
 
             <ProgressBar progress={75} />
+
+            <div className='mt-6 flex flex-col gap-3'>
+              <AppCheckBox
+                text={'comer um hamburgão'}
+                lineInText={true}
+              />
+            </div>
 
             <Popover.Arrow height={8} width={16} className="fill-zinc-900" />
           </Popover.Content>
